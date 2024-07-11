@@ -1,0 +1,11 @@
+- Basic CRUD Methods
+- Search Filter
+- Serilog
+- Authorization Filter using JWT
+- Action Filter
+- Exception Filter
+- Result Filter
+- AutoMapper / BoxedMapping
+- Custom Middleware
+- Cache Service
+- Read Data from xlsx/csv file & add in DB
