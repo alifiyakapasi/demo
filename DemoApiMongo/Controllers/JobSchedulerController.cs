@@ -17,9 +17,9 @@ namespace DemoApiMongo.Controllers
         }
 
         [HttpPost("schedule-job")]
-        public IActionResult ScheduleJob([FromBody] string cronExpression)
+        public IActionResult ScheduleJob([FromBody] string cronExpression, string jobName)
         {
-            _jobScheduler.ScheduleRecurringJob(cronExpression);
+            _jobScheduler.ScheduleRecurringJob(cronExpression, jobName);
 
             return Ok("Recurring job scheduled with the provided cron expression.");
         }

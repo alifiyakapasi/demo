@@ -2,7 +2,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using StackExchange.Redis;
 
 namespace DemoApiMongo.HangFireScheduler
 {
@@ -13,39 +12,55 @@ namespace DemoApiMongo.HangFireScheduler
 
         public JobScheduler(IMongoDatabase database)
         {
-            _collection = database.GetCollection<HangFireLog>("HangFireLog");
+            _collection = database.GetCollection<HangFireLog>("HangFireLog1");
             _machineIdentifier = Environment.MachineName;
         }
+
         public void WriteToTextFile()
         {
-            string filePath = "C:/Users/pctr64/Desktop/hangfire2.txt";
+            var baseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "SchedulerLogsFile");
+            string filePath = Path.Combine(baseDirectory, $"Hangfire_{DateTime.Now:yyyyMMdd}.txt");
 
-            using (StreamWriter writer = File.AppendText(filePath))
+            if (!Directory.Exists(baseDirectory))
             {
-                writer.WriteLine($"PCTR64 - Executed at {DateTime.Now}");
+                Directory.CreateDirectory(baseDirectory);
+            }
+
+            if (File.Exists(filePath))
+            {
+                using (StreamWriter writer = File.AppendText(filePath))
+                {
+                    writer.WriteLine($"PCTR64 - Executed at {DateTime.Now}");
+                }
+            }
+            else
+            {
+                // If file does not exist, create a new file and write to it
+                using (StreamWriter writer = File.CreateText(filePath))
+                {
+                    writer.WriteLine($"PCTR64 - Executed at {DateTime.Now}");
+                }
             }
         }
 
-        public void ScheduleRecurringJob(string cronExpression)
+        public void ScheduleRecurringJob(string cronExpression, string jobName)
         {
-            string jobName = $"{_machineIdentifier}";
-            //RecurringJob.AddOrUpdate<JobScheduler>(jobName, x => ExecuteJob(cronExpression), cronExpression);
             RecurringJob.AddOrUpdate(jobName, () => ExecuteJob(cronExpression), cronExpression);
-
-            //RecurringJob.AddOrUpdate<JobScheduler>("HangFire Example", x => ExecuteJob(cronExpression), cronExpression);
         }
+
         public void ExecuteJob(string cronExpression)
         {
             HangFireLog newData = new HangFireLog
             {
-                LogName = "PCTR64",
+                LogName = $"{_machineIdentifier}",
                 LogTime = DateTime.Now,
             };
             _collection.InsertOne(newData);
 
             // To print in file
-           // WriteToTextFile();
+            WriteToTextFile();
         }
+
         public void StopRecurringJob(string jobName)
         {
             RecurringJob.RemoveIfExists(jobName);

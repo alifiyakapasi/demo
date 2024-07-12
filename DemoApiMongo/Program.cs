@@ -26,24 +26,24 @@ Log.Logger = new LoggerConfiguration().MinimumLevel.Debug()
     .WriteTo.File("log/productsLogs.txt", rollingInterval: RollingInterval.Day).CreateBootstrapLogger();
 builder.Host.UseSerilog();
 
-//var mongoClient = new MongoClient("your connection string");
-//var database = mongoClient.GetDatabase("Demo");
+// DB Global Connection
+var connectionString = builder.Configuration.GetSection("ProductDatabase")
+    .Get<ProductDBSettings>()?.ConnectionString;
 
-//// Register MongoDB database instance for DI
-//builder.Services.AddSingleton(database);
+var databaseName = builder.Configuration.GetSection("ProductDatabase")
+    .Get<ProductDBSettings>()?.DatabaseName;
 
-
-// Temporary Databasse setting
-var mongoUrlBuilder = new MongoUrlBuilder("mongodb://localhost:27017");
+// Temporary Database setting
+var mongoUrlBuilder = new MongoUrlBuilder(connectionString);
 var mongoClient = new MongoClient(mongoUrlBuilder.ToMongoUrl());
-var database = mongoClient.GetDatabase("DEV");
+var database = mongoClient.GetDatabase(databaseName);
 builder.Services.AddSingleton(database);
 
 
-// Configure Hangfire
+// Configure DB For Hangfire
 builder.Services.AddHangfire(config =>
 {
-    var mongoUrlBuilder = new MongoUrlBuilder("mongodb://localhost:27017");
+    var mongoUrlBuilder = new MongoUrlBuilder(connectionString);
     var mongoClient = new MongoClient(mongoUrlBuilder.ToMongoUrl());
 
     var storageOptions = new MongoStorageOptions
@@ -55,9 +55,9 @@ builder.Services.AddHangfire(config =>
         }
     };
 
-    //config.UseMongoStorage(mongoClient, "DEV", storageOptions);
+    //config.UseMongoStorage(mongoClient, databaseName, storageOptions);
     GlobalConfiguration.Configuration
-    .UseMongoStorage(mongoClient, "DEV", storageOptions);
+    .UseMongoStorage(mongoClient, databaseName, storageOptions);
 });
 
 var options = new BackgroundJobServerOptions
