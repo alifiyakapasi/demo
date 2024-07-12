@@ -8,6 +8,10 @@ using DemoApiMongo.Filter;
 using DemoApiMongo.HangFireScheduler;
 using DemoApiMongo.Middleware;
 using DemoApiMongo.Repository;
+using Hangfire;
+using Hangfire.Mongo;
+using Hangfire.Mongo.Migration.Strategies;
+using Hangfire.Mongo.Migration.Strategies.Backup;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -22,14 +26,55 @@ Log.Logger = new LoggerConfiguration().MinimumLevel.Debug()
     .WriteTo.File("log/productsLogs.txt", rollingInterval: RollingInterval.Day).CreateBootstrapLogger();
 builder.Host.UseSerilog();
 
-var mongoClient = new MongoClient("your connection string");
-var database = mongoClient.GetDatabase("Demo");
+//var mongoClient = new MongoClient("your connection string");
+//var database = mongoClient.GetDatabase("Demo");
 
-// Register MongoDB database instance for DI
+//// Register MongoDB database instance for DI
+//builder.Services.AddSingleton(database);
+
+
+// Temporary Databasse setting
+var mongoUrlBuilder = new MongoUrlBuilder("mongodb://localhost:27017");
+var mongoClient = new MongoClient(mongoUrlBuilder.ToMongoUrl());
+var database = mongoClient.GetDatabase("DEV");
 builder.Services.AddSingleton(database);
 
 
-builder.Services.AddSingleton<QuartzManager>();
+// Configure Hangfire
+builder.Services.AddHangfire(config =>
+{
+    var mongoUrlBuilder = new MongoUrlBuilder("mongodb://localhost:27017");
+    var mongoClient = new MongoClient(mongoUrlBuilder.ToMongoUrl());
+
+    var storageOptions = new MongoStorageOptions
+    {
+        MigrationOptions = new MongoMigrationOptions
+        {
+            MigrationStrategy = new MigrateMongoMigrationStrategy(),
+            BackupStrategy = new CollectionMongoBackupStrategy()
+        }
+    };
+
+    //config.UseMongoStorage(mongoClient, "DEV", storageOptions);
+    GlobalConfiguration.Configuration
+    .UseMongoStorage(mongoClient, "DEV", storageOptions);
+});
+
+var options = new BackgroundJobServerOptions
+{
+    ServerName = String.Format(
+        "{0}.{1}",
+        Environment.MachineName,
+        Guid.NewGuid().ToString())
+};
+
+//HangFire Service call
+builder.Services.AddHangfireServer();
+
+//Call Class for Reoccuring HangFire 
+builder.Services.AddScoped<JobScheduler>();
+
+//builder.Services.AddSingleton<QuartzManager>();
 
 // DB Settings
 builder.Services.Configure<ProductDBSettings>(
@@ -116,11 +161,11 @@ builder.Services.AddSwaggerGen(options => {
     });
 });
 
+// Add Quartz Scheduler to services (if needed)
 var scheduler = new StdSchedulerFactory().GetScheduler().Result;
 scheduler.Start().Wait();
-
-// Add Quartz Scheduler to services (if needed)
 builder.Services.AddSingleton(scheduler);
+
 var app = builder.Build();
 
 app.UseCors();
@@ -136,8 +181,12 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Use Hangfire server and dashboard
+//app.UseHangfireServer();
+app.UseHangfireDashboard();
+
 // Quartz Dashboard
-app.UseCrystalQuartz(() => scheduler);
+//app.UseCrystalQuartz(() => scheduler);
 
 app.MapControllers();
 

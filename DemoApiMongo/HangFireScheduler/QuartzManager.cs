@@ -50,7 +50,7 @@ public class QuartzManager
 
 public class HelloJob : IJob
 {
-    const string connectionUri = "your connection string";
+    const string connectionUri = "";
     const string dbName = "DEV";
 
     MongoClient client = new MongoClient(connectionUri);
