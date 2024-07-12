@@ -27,5 +27,34 @@ namespace DemoApiMongo.Controllers
             await _quartzManager.StopAsync();
             return Ok("Job stopped successfully.");
         }
+
+        [HttpGet("pause")]
+        public async Task<IActionResult> PauseJob()
+        {
+            try
+            {
+                await _quartzManager.PauseJob();
+                return Ok("Job paused successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Failed to pause job: {ex.Message}");
+            }
+        }
+
+        [HttpGet("resume")]
+        public async Task<IActionResult> ResumeJob()
+        {
+            try
+            {
+                await _quartzManager.ResumeJob();
+                return Ok("Job resumed successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Failed to resume job: {ex.Message}");
+            }
+        }
+
     }
 }

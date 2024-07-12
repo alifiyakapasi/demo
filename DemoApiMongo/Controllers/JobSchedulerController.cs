@@ -1,6 +1,8 @@
 ﻿using DemoApiMongo.Entities.ViewModels;
 using DemoApiMongo.HangFireScheduler;
 using DemoApiMongo.Repository;
+using Hangfire.States;
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DemoApiMongo.Controllers
@@ -30,6 +32,20 @@ namespace DemoApiMongo.Controllers
             _jobScheduler.StopRecurringJob(jobName);
 
             return Ok("Recurring job is stopped.");
+        }
+
+        [HttpPost("hangfire-pause-job")]
+        public IActionResult PauseJob(string jobId)
+        {
+            _jobScheduler.PauseJob(jobId);
+            return Ok("Job paused successfully.");
+        }
+
+        [HttpPost("hangfire-resume-job")]
+        public IActionResult ResumeJob(string jobId)
+        {
+            _jobScheduler.ResumeJob(jobId);
+            return Ok("Job resumed successfully.");
         }
     }
 }

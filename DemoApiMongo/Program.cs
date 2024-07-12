@@ -74,7 +74,7 @@ builder.Services.AddHangfireServer();
 //Call Class for Reoccuring HangFire 
 builder.Services.AddScoped<JobScheduler>();
 
-//builder.Services.AddSingleton<QuartzManager>();
+builder.Services.AddSingleton<QuartzManager>();
 
 // DB Settings
 builder.Services.Configure<ProductDBSettings>(
@@ -186,7 +186,7 @@ app.UseAuthorization();
 app.UseHangfireDashboard();
 
 // Quartz Dashboard
-//app.UseCrystalQuartz(() => scheduler);
+app.UseCrystalQuartz(() => scheduler);
 
 app.MapControllers();
 
